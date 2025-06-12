@@ -6,39 +6,58 @@
     <link rel="stylesheet" href="../style.css" />
     <link rel="stylesheet" href="twitch.css" />
     <script>
-      let countdown = 3;
+      function openTwitch() {
+        const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+        const twitchUrl = "https://www.twitch.tv/SunekitTTV";
 
-      function updateCountdown() {
-        const counterElement = document.getElementById("countdown");
-        if (countdown > 0) {
-          counterElement.textContent = countdown;
-          countdown--;
-        } else {
-          clearInterval(timer);
-          // Tentative de redirection vers l'app Twitch
-          window.location = "twitch://streamer/SunekitTTV";
+        if (/android/i.test(userAgent)) {
+          // Android : ouverture via intent://
+          window.location = "intent://streamer/SunekitTTV#Intent;scheme=twitch;package=tv.twitch.android.viewer;end";
 
-          // Redirection vers le site après 2s si l’app ne s’ouvre pas
-          setTimeout(function () {
-            window.location = "https://www.twitch.tv/SunekitTTV";
+          // fallback vers le site web si l'app n'est pas installée
+          setTimeout(() => {
+            window.location = twitchUrl;
           }, 2000);
+        } else if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+          // iOS : ouverture via universal link (site Twitch qui ouvre l'app si installée)
+          window.location = twitchUrl;
+        } else {
+          // Desktop ou autre : site web Twitch
+          window.location = twitchUrl;
         }
       }
 
-      let timer;
       window.onload = function () {
-        updateCountdown(); // mise à jour immédiate
-        timer = setInterval(updateCountdown, 1000);
+        let countdown = 3;
+        const counterElement = document.getElementById("countdown");
+
+        const timer = setInterval(() => {
+          if (countdown > 0) {
+            counterElement.textContent = countdown;
+            countdown--;
+          } else {
+            clearInterval(timer);
+            openTwitch();
+          }
+        }, 1000);
       };
     </script>
   </head>
   <body>
     <div class="loader-container">
       <div class="logo-circle">
-        <img src="https://static.twitchcdn.net/assets/favicon-32-e29e246c157142c94346.png" alt="Twitch Logo" />
+        <img
+          src="https://static.twitchcdn.net/assets/favicon-32-e29e246c157142c94346.png"
+          alt="Twitch Logo"
+        />
       </div>
-      <h1>Connexion à Twitch dans <span id="countdown">3</span> secondes...</h1>
-      <p>Si rien ne se passe, <a href="https://www.twitch.tv/SunekitTTV" class="link">clique ici</a>.</p>
+      <h1>
+        Connexion à Twitch dans <span id="countdown">3</span> secondes...
+      </h1>
+      <p>
+        Si rien ne se passe,
+        <a href="https://www.twitch.tv/SunekitTTV" class="link">clique ici</a>.
+      </p>
       <div class="loader"></div>
     </div>
   </body>
