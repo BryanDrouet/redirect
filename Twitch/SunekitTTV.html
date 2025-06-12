@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Redirection Twitch SunekitTTV</title>
+    <link rel="stylesheet" href="../style.css" />
+    <link rel="stylesheet" href="twitch.css" />
+    <script>
+      let countdown = 3;
+
+      function updateCountdown() {
+        const counterElement = document.getElementById("countdown");
+        if (countdown > 0) {
+          counterElement.textContent = countdown;
+          countdown--;
+        } else {
+          clearInterval(timer);
+          // Tentative de redirection vers l'app Twitch
+          window.location = "twitch://streamer/SunekitTTV";
+
+          // Redirection vers le site après 2s si l’app ne s’ouvre pas
+          setTimeout(function () {
+            window.location = "https://www.twitch.tv/SunekitTTV";
+          }, 2000);
+        }
+      }
+
+      let timer;
+      window.onload = function () {
+        updateCountdown(); // mise à jour immédiate
+        timer = setInterval(updateCountdown, 1000);
+      };
+    </script>
+  </head>
+  <body>
+    <div class="loader-container">
+      <div class="logo-circle">
+        <img src="https://static.twitchcdn.net/assets/favicon-32-e29e246c157142c94346.png" alt="Twitch Logo" />
+      </div>
+      <h1>Connexion à Twitch dans <span id="countdown">3</span> secondes...</h1>
+      <p>Si rien ne se passe, <a href="https://www.twitch.tv/SunekitTTV" class="link">clique ici</a>.</p>
+      <div class="loader"></div>
+    </div>
+  </body>
+</html>

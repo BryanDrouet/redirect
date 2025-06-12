@@ -1,0 +1,22 @@
+:root {
+  --bg-color: #0e0e10;
+  --text-color: #ffffff;
+  --accent-color: #9146FF;       /* Violet Twitch */
+  --accent-light: #b97fff;       /* Violet plus clair */
+  --link-color: #bf94ff;
+}
+
+body {
+  background: 
+    /* Grain texture */
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><filter id='noiseFilter'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23noiseFilter)' opacity='0.03'/></svg>") repeat,
+
+    /* Twitch purple gradient */
+    linear-gradient(135deg, #0e0e10 0%, #1a1132 50%, #9146FF 100%);
+
+  background-size: cover;
+  color: var(--text-color);
+  font-family: sans-serif;
+  margin: 0;
+  padding: 0;
+}
