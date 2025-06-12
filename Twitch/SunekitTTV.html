@@ -8,21 +8,24 @@
     <script>
       function openTwitch() {
         const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-        const twitchUrl = "https://www.twitch.tv/SunekitTTV";
+        const twitchUser = "SunekitTTV";
+        const twitchUrl = `https://www.twitch.tv/${twitchUser}`;
 
         if (/android/i.test(userAgent)) {
-          // Android : ouverture via intent://
-          window.location = "intent://streamer/SunekitTTV#Intent;scheme=twitch;package=tv.twitch.android.viewer;end";
+          // Android : ouverture via intent:// avec fallback URL encodée
+          window.location = 
+            `intent://user/${twitchUser}#Intent;scheme=twitch;package=tv.twitch.android.viewer;` +
+            `S.browser_fallback_url=${encodeURIComponent(twitchUrl)};end`;
 
-          // fallback vers le site web si l'app n'est pas installée
+          // fallback manuelle au cas où (au bout de 3s)
           setTimeout(() => {
             window.location = twitchUrl;
-          }, 2000);
+          }, 3000);
         } else if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
-          // iOS : ouverture via universal link (site Twitch qui ouvre l'app si installée)
+          // iOS : universal link (ouvre l'app Twitch si installée)
           window.location = twitchUrl;
         } else {
-          // Desktop ou autre : site web Twitch
+          // Desktop ou autre : ouvre site web
           window.location = twitchUrl;
         }
       }
