@@ -1,4 +1,4 @@
-s<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
@@ -6,17 +6,28 @@ s<!DOCTYPE html>
     <link rel="stylesheet" href="../style.css" />
     <link rel="stylesheet" href="twitch.css" />
     <script>
+      const redirectEnabled = true;
+      const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+      const twitchUser = "SunekitTTV";
+      const twitchUrl = `https://www.twitch.tv/${twitchUser}`;
+
       function openTwitch() {
-        const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-        const twitchUser = "SunekitTTV";
-        const twitchUrl = `https://www.twitch.tv/${twitchUser}`;
+        if (!redirectEnabled) {
+          document.getElementById("main-title").textContent = "Redirection désactivée !";
+          document.getElementById("main-desc").innerHTML = `
+            Redirection automatique désactivée sur ce lien.<br>
+            <a href="https://www.twitch.tv/SunekitTTV" class="link">Cliquer ici pour accéder manuellement.</a>
+          `;
+          document.getElementById("main-desc").style.marginBottom = "0";
+          document.querySelector(".loader").style.display = "none";
+          return;
+        }
 
         if (/android/i.test(userAgent)) {
           window.location = 
             `intent://user/${twitchUser}#Intent;scheme=twitch;package=tv.twitch.android.viewer;` +
             `S.browser_fallback_url=${encodeURIComponent(twitchUrl)};end`;
 
-          // fallback manuelle au cas où (au bout de 3s)
           setTimeout(() => {
             window.location = twitchUrl;
           }, 3000);
@@ -30,6 +41,15 @@ s<!DOCTYPE html>
       window.onload = function () {
         let countdown = 0;
         const counterElement = document.getElementById("countdown");
+        document.getElementById("manual-link").href = twitchUrl;
+
+        if (!redirectEnabled) {
+          document.getElementById("main-title").textContent = "Redirection désactivée !";
+          document.getElementById("main-desc").innerHTML =
+            `Redirection automatique désactivée sur ce lien.<br>
+            <a id="manual-link" href="${twitchUrl}" class="link">Cliquer ici pour accéder manuellement.</a>`;
+          return;
+        }
 
         const timer = setInterval(() => {
           if (countdown > 0) {
@@ -47,16 +67,16 @@ s<!DOCTYPE html>
     <div class="loader-container">
       <div class="logo-circle">
         <img
-          src="https://static.twitchcdn.net/assets/favicon-32-e29e246c157142c94346.png"
+          src="../assets/logoTwitch.png"
           alt="Twitch Logo"
         />
       </div>
-      <h1>
+      <h1 id="main-title">
         Connexion à Twitch dans quelques secondes...
       </h1>
-      <p>
+      <p id="main-desc">
         Si rien ne se passe,
-        <a href="https://www.twitch.tv/SunekitTTV" class="link">clique ici</a>.
+        <a id="manual-link" href="#" class="link">clique ici</a>.
       </p>
       <div class="loader"></div>
     </div>

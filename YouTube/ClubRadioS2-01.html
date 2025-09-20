@@ -6,88 +6,159 @@
     <link rel="stylesheet" href="../style.css" />
     <link rel="stylesheet" href="youtube.css" />
     <script>
+      const redirectEnabled = true; 
+      const defaultUrl = 'https://www.youtube.com/live/5ID8Fp8f7oM'; 
+
       function getYouTubeUrl() {
-        // Récupère l'URL depuis les paramètres GET ou utilise une URL par défaut
         const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get('url') || 'https://youtube.com/live/5ID8Fp8f7oM';
+        return urlParams.get('url') || defaultUrl;
+      }
+
+      function normalizeYouTubeHost(u) {
+        try {
+          const x = new URL(u);
+          if (x.hostname === 'youtu.be') {
+            const id = x.pathname.slice(1);
+            return `https://www.youtube.com/watch?v=${id}`;
+          }
+          if (!/^https?:$/i.test(x.protocol)) {
+            x.protocol = 'https:';
+          }
+          return x.toString();
+        } catch {
+          return u;
+        }
       }
 
       function parseYouTubeUrl(url) {
+        const u = normalizeYouTubeHost(url);
         const patterns = {
-          clip: /youtube\.com\/clip\/([^/?]+)/,
-          post: /youtube\.com\/post\/([^/?]+)/,
-          shorts: /youtube\.com\/shorts\/([^/?]+)/,
-          video: /youtube\.com\/watch\?v=([^&]+)/,
-          playlist: /youtube\.com\/playlist\?list=([^&]+)/,
-          channel: /youtube\.com\/@([^/?]+)/
+          clip: /youtube\.com\/clip\/([^/?#]+)/i,
+          post: /youtube\.com\/post\/([^/?#]+)/i,
+          shorts: /youtube\.com\/shorts\/([^/?#]+)/i,
+          video: /youtube\.com\/watch\?[^#]*v=([^&#]+)/i,
+          playlist: /youtube\.com\/playlist\?[^#]*list=([^&#]+)/i,
+          channelHandle: /youtube\.com\/@([^/?#]+)/i,
+          channelUser: /youtube\.com\/user\/([^/?#]+)/i,
+          channelId: /youtube\.com\/channel\/([^/?#]+)/i,
         };
 
         for (const [type, pattern] of Object.entries(patterns)) {
-          const match = url.match(pattern);
+          const match = u.match(pattern);
           if (match) {
-            return { type, id: match[1], originalUrl: url };
+            return { type, id: match[1], originalUrl: u };
+          }
+        }
+        return { type: 'unknown', id: null, originalUrl: u };
+      }
+
+      function buildDeepLinks(parsed) {
+        let deeplinkIOS = null;
+        let deeplinkAndroid = null;
+        let webUrl = parsed.originalUrl;
+
+        switch (parsed.type) {
+          case 'video': {
+            const qp = `watch?v=${parsed.id}`;
+            deeplinkIOS = `youtube://www.youtube.com/${qp}`;
+            deeplinkAndroid = `vnd.youtube://www.youtube.com/${qp}`;
+            break;
+          }
+          case 'shorts': {
+            const path = `shorts/${parsed.id}`;
+            deeplinkIOS = `youtube://www.youtube.com/${path}`;
+            deeplinkAndroid = `vnd.youtube://www.youtube.com/${path}`;
+            webUrl = `https://www.youtube.com/watch?v=${parsed.id}`;
+            break;
+          }
+          case 'playlist': {
+            const qp = `playlist?list=${parsed.id}`;
+            deeplinkIOS = `youtube://www.youtube.com/${qp}`;
+            deeplinkAndroid = `vnd.youtube://www.youtube.com/${qp}`;
+            break;
+          }
+          case 'channelHandle': {
+            const path = `user/${parsed.id}`;
+            deeplinkIOS = `youtube://www.youtube.com/${path}`;
+            deeplinkAndroid = `vnd.youtube://www.youtube.com/${path}`;
+            break;
+          }
+          case 'channelUser': {
+            const path = `user/${parsed.id}`;
+            deeplinkIOS = `youtube://www.youtube.com/${path}`;
+            deeplinkAndroid = `vnd.youtube://www.youtube.com/${path}`;
+            break;
+          }
+          case 'channelId': {
+            deeplinkIOS = `youtube://www.youtube.com/channel/${parsed.id}`;
+            deeplinkAndroid = `vnd.youtube://www.youtube.com/channel/${parsed.id}`;
+            break;
+          }
+          case 'clip':
+          case 'post':
+          default: {
+            deeplinkIOS = null;
+            deeplinkAndroid = null;
           }
         }
 
-        return { type: 'unknown', id: null, originalUrl: url };
+        return { deeplinkIOS, deeplinkAndroid, webUrl };
       }
 
       function openYouTube() {
-        const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+        const ua = navigator.userAgent || navigator.vendor || window.opera;
         const targetUrl = getYouTubeUrl();
         const parsed = parseYouTubeUrl(targetUrl);
-        
-        let deeplink = null;
-        let fallbackUrl = parsed.originalUrl;
+        const { deeplinkIOS, deeplinkAndroid, webUrl } = buildDeepLinks(parsed);
 
-        // Génère le deeplink selon le type
-        switch (parsed.type) {
-          case 'video':
-            deeplink = `vnd.youtube://watch?v=${parsed.id}`;
-            break;
-          case 'shorts':
-            deeplink = `vnd.youtube://shorts/${parsed.id}`;
-            break;
-          case 'channel':
-            deeplink = `vnd.youtube://user/${parsed.id}`;
-            break;
-          case 'playlist':
-            deeplink = `vnd.youtube://playlist?list=${parsed.id}`;
-            break;
-          case 'clip':
-          case 'post':
-          default:
-            // Pas de deeplink spécifique, utilise l'URL web
-            deeplink = null;
-            break;
+        if (!redirectEnabled) {
+          document.getElementById("main-title").textContent = "Redirection désactivée !";
+          document.getElementById("main-desc").innerHTML =
+            `Redirection automatique désactivée sur ce lien.<br>
+             <a id="manual-link" href="${webUrl}" class="link">Cliquer ici pour accéder manuellement.</a>`;
+          document.querySelector(".loader").style.display = "none";
+          return;
         }
 
-        if (/android/i.test(userAgent) && deeplink) {
-          // Android avec deeplink
-          window.location = 
+        if (/android/i.test(ua) && deeplinkAndroid) {
+          window.location =
             `intent://www.youtube.com#Intent;scheme=https;package=com.google.android.youtube;` +
-            `S.browser_fallback_url=${encodeURIComponent(fallbackUrl)};end`;
-          // Fallback après 3 secondes
-          setTimeout(() => {
-            window.location = fallbackUrl;
-          }, 3000);
-        } else if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream && deeplink) {
-          // iOS avec deeplink
-          window.location = deeplink;
-          // Fallback après 2 secondes
-          setTimeout(() => {
-            window.location = fallbackUrl;
-          }, 2000);
-        } else {
-          // Desktop ou pas de deeplink - utilise l'URL web
-          window.location = fallbackUrl;
+            `S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
+          setTimeout(() => { window.location = webUrl; }, 3000);
+          return;
         }
+
+        if (/iPad|iPhone|iPod/.test(ua) && !window.MSStream && deeplinkIOS) {
+          window.location = deeplinkIOS;
+          setTimeout(() => { window.location = webUrl; }, 2000);
+          return;
+        }
+
+        window.location = webUrl;
       }
 
       window.onload = function () {
-        let countdown = 0;
+        const ua = navigator.userAgent || navigator.vendor || window.opera;
+        const targetUrl = getYouTubeUrl();
+        const parsed = parseYouTubeUrl(targetUrl);
+        const { webUrl } = buildDeepLinks(parsed);
+
+        let countdown = 0; 
+        const counterElement = document.getElementById("countdown");
+        const manual = document.getElementById("manual-link");
+        if (manual) manual.href = webUrl;
+
+        if (!redirectEnabled) {
+          document.getElementById("main-title").textContent = "Redirection désactivée !";
+          document.getElementById("main-desc").innerHTML =
+            `Redirection automatique désactivée sur ce lien.<br>
+             <a id="manual-link" href="${webUrl}" class="link">Cliquer ici pour accéder manuellement.</a>`;
+          return;
+        }
+
         const timer = setInterval(() => {
           if (countdown > 0) {
+            if (counterElement) counterElement.textContent = countdown;
             countdown--;
           } else {
             clearInterval(timer);
@@ -100,17 +171,14 @@
   <body>
     <div class="loader-container">
       <div class="logo-circle">
-        <img
-          src="https://www.youtube.com/favicon.ico"
-          alt="YouTube Logo"
-        />
+        <img src="../assets/logoYouTube.png" alt="YouTube Logo" />
       </div>
-      <h1>
+      <h1 id="main-title">
         Connexion à YouTube dans quelques secondes...
       </h1>
-      <p>
+      <p id="main-desc">
         Si rien ne se passe,
-        <a href="#" onclick="openYouTube(); return false;" class="link">clique ici</a>.
+        <a id="manual-link" href="#" class="link">clique ici</a>.
       </p>
       <div class="loader"></div>
     </div>
