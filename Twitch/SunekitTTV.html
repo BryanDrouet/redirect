@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+s<!DOCTYPE html>
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
@@ -12,7 +12,6 @@
         const twitchUrl = `https://www.twitch.tv/${twitchUser}`;
 
         if (/android/i.test(userAgent)) {
-          // Android : ouverture via intent:// avec fallback URL encodée
           window.location = 
             `intent://user/${twitchUser}#Intent;scheme=twitch;package=tv.twitch.android.viewer;` +
             `S.browser_fallback_url=${encodeURIComponent(twitchUrl)};end`;
@@ -22,10 +21,8 @@
             window.location = twitchUrl;
           }, 3000);
         } else if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
-          // iOS : universal link (ouvre l'app Twitch si installée)
           window.location = twitchUrl;
         } else {
-          // Desktop ou autre : ouvre site web
           window.location = twitchUrl;
         }
       }
@@ -55,7 +52,7 @@
         />
       </div>
       <h1>
-        Connexion à Twitch dans <span id="countdown">3</span> secondes...
+        Connexion à Twitch dans quelques secondes...
       </h1>
       <p>
         Si rien ne se passe,
