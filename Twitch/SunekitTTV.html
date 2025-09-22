@@ -1,96 +1,126 @@
 <!DOCTYPE html>
 <html lang="fr">
-  <head>
-    <meta property="og:title" content="SunekitTTV — Twitch" />
-    <meta property="og:description" content="Chaîne Twitch de SunekitTTV." />
-    <meta property="og:type" content="profile" />
-    <meta property="og:url" content="https://www.twitch.tv/SunekitTTV" />
-    <meta property="og:image" content="https://static-cdn.jtvnw.net/jtv_user_pictures/…/profile_image-300x300.png" />
-    <meta property="og:image:alt" content="Avatar de la chaîne SunekitTTV" />
+<head>
+<meta charset="UTF-8" />
+<meta property="og:title" content="SunekitTTV — Twitch" />
+<meta property="og:description" content="Chaîne Twitch de SunekitTTV." />
+<meta property="og:type" content="profile" />
+<meta property="og:url" content="https://www.twitch.tv/SunekitTTV" />
+<meta property="og:image" content="https://static-cdn.jtvnw.net/jtv_user_pictures/…/profile_image-300x300.png" />
+<meta property="og:image:alt" content="Avatar de la chaîne SunekitTTV" />
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="SunekitTTV — Twitch" />
-    <meta name="twitter:description" content="Chaîne Twitch de SunekitTTV." />
-    <meta name="twitter:image" content="https://static-cdn.jtvnw.net/jtv_user_pictures/…/profile_image-300x300.png" />
-    
-    <meta charset="UTF-8" />
-    <title>Redirection Twitch SunekitTTV</title>
-    <link rel="stylesheet" href="../style.css" />
-    <link rel="stylesheet" href="twitch.css" />
-    <script>
-      const redirectEnabled = true;
-      const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-      const twitchUser = "SunekitTTV";
-      const twitchUrl = `https://www.twitch.tv/${twitchUser}`;
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="SunekitTTV — Twitch" />
+<meta name="twitter:description" content="Chaîne Twitch de SunekitTTV." />
+<meta name="twitter:image" content="https://static-cdn.jtvnw.net/jtv_user_pictures/…/profile_image-300x300.png" />
 
-      function openTwitch() {
-        if (!redirectEnabled) {
-          document.getElementById("main-title").textContent = "Redirection désactivée !";
-          document.getElementById("main-desc").innerHTML = `
-            Redirection automatique désactivée sur ce lien.<br>
-            <a href="https://www.twitch.tv/SunekitTTV" class="link">Cliquer ici pour accéder manuellement.</a>
-          `;
-          document.getElementById("main-desc").style.marginBottom = "0";
-          document.querySelector(".loader").style.display = "none";
-          return;
-        }
+<title>Redirection Twitch SunekitTTV</title>
+<link rel="stylesheet" href="../style.css" />
+<link rel="stylesheet" href="twitch.css" />
 
-        if (/android/i.test(userAgent)) {
-          window.location = 
-            `intent://user/${twitchUser}#Intent;scheme=twitch;package=tv.twitch.android.viewer;` +
-            `S.browser_fallback_url=${encodeURIComponent(twitchUrl)};end`;
+<script>
+  // Configuration
+  const redirectEnabled = true; // Mettre à false pour désactiver
+  const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+  // URL Twitch à traiter (peut être dynamique selon besoin)
+  const twitchUrl = "https://www.twitch.tv/SunekitTTV"; // À ajuster ou récupérer dynamiquement
 
-          setTimeout(() => {
-            window.location = twitchUrl;
-          }, 3000);
-        } else if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
-          window.location = twitchUrl;
-        } else {
-          window.location = twitchUrl;
-        }
+  /**
+   * Fonction pour analyser l'URL Twitch et détecter son type (live, VOD, clip)
+   */
+  function parseTwitchUrl(url) {
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname.toLowerCase();
+    const pathSegments = urlObj.pathname.toLowerCase().split('/').filter(Boolean);
+
+    if (hostname.includes('clips.twitch.tv')) {
+      // Clip
+      return { type: 'clip', id: pathSegments[0], url: url };
+    } else if (pathSegments.length >= 2 && pathSegments[0] === 'videos') {
+      // VOD format /videos/id
+      return { type: 'vod', id: pathSegments[1], url: url };
+    } else if (pathSegments.length >= 3 && pathSegments[1] === 'videos') {
+      // VOD avec nom de chaîne /nom_de_chaine/videos/id
+      return { type: 'vod', id: pathSegments[2], url: url };
+    } else if (pathSegments.length === 1) {
+      // Chaîne live ou simple
+      return { type: 'channel', user: pathSegments[0], url: url };
+    }
+    return { type: 'unknown', url: url };
+  }
+
+  /**
+   * Fonction d'ouverture et redirection selon le type détecté
+   */
+  function openTwitch(url) {
+    if (!redirectEnabled) {
+      document.getElementById("main-title").textContent = "Redirection désactivée !";
+      document.getElementById("main-desc").innerHTML = `<a href="${url}" class="link">Accéder manuellement à Twitch</a>`;
+      document.querySelector(".loader").style.display = "none";
+      return;
+    }
+    const parsed = parseTwitchUrl(url);
+
+    if (/android/i.test(userAgent)) {
+      // Support intent Android uniquement pour chaîne live
+      if (parsed.type === 'channel') {
+        window.location =
+          `intent://user/${parsed.user}#Intent;scheme=twitch;package=tv.twitch.android.viewer;` +
+          `S.browser_fallback_url=${encodeURIComponent(parsed.url)};end`;
+        setTimeout(() => { window.location = parsed.url; }, 3000);
+      } else {
+        // VOD ou clip: ouverture normale
+        window.location = parsed.url;
       }
+    } else if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+      // iOS
+      window.location = parsed.url;
+    } else {
+      // Desktop ou autres
+      window.location = parsed.url;
+    }
+  }
 
-      window.onload = function () {
-        let countdown = 0;
-        const counterElement = document.getElementById("countdown");
-        document.getElementById("manual-link").href = twitchUrl;
+  /**
+   * Fonction principale au chargement
+   */
+  window.onload = function () {
+    const urlToOpen = twitchUrl; // Modifier si dynamique
+    document.getElementById("manual-link").href = urlToOpen;
 
-        if (!redirectEnabled) {
-          document.getElementById("main-title").textContent = "Redirection désactivée !";
-          document.getElementById("main-desc").innerHTML =
-            `Redirection automatique désactivée sur ce lien.<br>
-            <a id="manual-link" href="${twitchUrl}" class="link">Cliquer ici pour accéder manuellement.</a>`;
-          return;
-        }
+    let countdown = 3; // Temps de countdown en secondes
+    const counterElement = document.getElementById("countdown");
 
-        const timer = setInterval(() => {
-          if (countdown > 0) {
-            counterElement.textContent = countdown;
-            countdown--;
-          } else {
-            clearInterval(timer);
-            openTwitch();
-          }
-        }, 1000);
-      };
-    </script>
-  </head>
-  <body>
-    <div class="loader-container">
-      <div class="logo-circle">
-        <img
-          src="../assets/logoTwitch.png"
-          alt="Twitch Logo"
-        />
-      </div>
-      <h1 id="main-title">
-        Connexion à Twitch dans quelques secondes...
-      </h1>
-      <p id="main-desc">
-        Si rien ne se passe,
-        <a id="manual-link" href="#" class="link">clique ici</a>.
-      </p>
-      <div class="loader"></div>
-    </div>
-  </body>
+    if (!redirectEnabled) {
+      document.getElementById("main-title").textContent = "Redirection désactivée !";
+      document.getElementById("main-desc").innerHTML =
+        `<a id="manual-link" href="${urlToOpen}" class="link">Accéder manuellement à Twitch</a>`;
+      return;
+    }
+
+    const timer = setInterval(() => {
+      if (countdown > 0) {
+        counterElement.textContent = countdown;
+        countdown--;
+      } else {
+        clearInterval(timer);
+        openTwitch(urlToOpen);
+      }
+    }, 1000);
+  };
+</script>
+</head>
+<body>
+<div class="loader-container">
+  <div class="logo-circle">
+    <img src="../assets/logoTwitch.png" alt="Twitch Logo" />
+  </div>
+  <h1 id="main-title">Connexion à Twitch dans quelques secondes...</h1>
+  <p id="main-desc">
+    Si rien ne se passe,
+    <a id="manual-link" href="#" class="link">cliquez ici</a>.
+  </p>
+  <div class="loader"></div>
+</div>
+</body>
 </html>
