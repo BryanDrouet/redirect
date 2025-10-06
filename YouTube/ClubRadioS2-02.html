@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta property="og:title" content="ClubRadio S2 #02 : Cancer du sein, Passionné du jour & Expression du jour" />
+    <meta property="og:description" content="Rediffusion de l'émission du ClubRadio Mauléon S2-02. Redirection automatique vers YouTube." />
+    <meta property="og:type" content="video.other" />
+    <meta property="og:url" content="https://www.youtube.com/watch?v=RElXeRZTNAg" />
+    <meta property="og:image" content="https://i.ytimg.com/vi/RElXeRZTNAg/maxresdefault.jpg" />
+    <meta property="og:image:alt" content="Miniature du live YouTube" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ClubRadio S2 #02 : Cancer du sein, Passionné du jour & Expression du jour" />
+    <meta name="twitter:description" content="Rediffusion de l'émission du ClubRadio Mauléon S2-02. Redirection automatique vers YouTube." />
+    <meta name="twitter:image" content="https://i.ytimg.com/vi/RElXeRZTNAg/maxresdefault.jpg" />
+    
+    <meta charset="UTF-8" />
+    <title>Redirection YouTube ClubRadio S2 #02</title>
+    <link rel="stylesheet" href="../style.css" />
+    <link rel="stylesheet" href="youtube.css" />
+
+    <script>
+      const redirectEnabled = true; 
+      const defaultUrl = 'https://www.youtube.com/watch?v=RElXeRZTNAg'; 
+
+      function getYouTubeUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('url') || defaultUrl;
+      }
+
+      function normalizeYouTubeHost(u) {
+        try {
+          const x = new URL(u);
+          if (x.hostname === 'youtu.be') {
+            const id = x.pathname.slice(1);
+            return `https://www.youtube.com/watch?v=${id}`;
+          }
+          if (!/^https?:$/i.test(x.protocol)) {
+            x.protocol = 'https:';
+          }
+          return x.toString();
+        } catch {
+          return u;
+        }
+      }
+
+      function parseYouTubeUrl(url) {
+        const u = normalizeYouTubeHost(url);
+        const patterns = {
+          clip: /youtube\.com\/clip\/([^/?#]+)/i,
+          post: /youtube\.com\/post\/([^/?#]+)/i,
+          shorts: /youtube\.com\/shorts\/([^/?#]+)/i,
+          video: /youtube\.com\/watch\?[^#]*v=([^&#]+)/i,
+          playlist: /youtube\.com\/playlist\?[^#]*list=([^&#]+)/i,
+          channelHandle: /youtube\.com\/@([^/?#]+)/i,
+          channelUser: /youtube\.com\/user\/([^/?#]+)/i,
+          channelId: /youtube\.com\/channel\/([^/?#]+)/i,
+        };
+
+        for (const [type, pattern] of Object.entries(patterns)) {
+          const match = u.match(pattern);
+          if (match) {
+            return { type, id: match[1], originalUrl: u };
+          }
+        }
+        return { type: 'unknown', id: null, originalUrl: u };
+      }
+
+      function buildDeepLinks(parsed) {
+        let deeplinkIOS = null;
+        let deeplinkAndroid = null;
+        let webUrl = parsed.originalUrl;
+
+        switch (parsed.type) {
+          case 'video': {
+            const qp = `watch?v=${parsed.id}`;
+            deeplinkIOS = `youtube://www.youtube.com/${qp}`;
+            deeplinkAndroid = `vnd.youtube://www.youtube.com/${qp}`;
+            break;
+          }
+          case 'shorts': {
+            const path = `shorts/${parsed.id}`;
+            deeplinkIOS = `youtube://www.youtube.com/${path}`;
+            deeplinkAndroid = `vnd.youtube://www.youtube.com/${path}`;
+            webUrl = `https://www.youtube.com/watch?v=${parsed.id}`;
+            break;
+          }
+          case 'playlist': {
+            const qp = `playlist?list=${parsed.id}`;
+            deeplinkIOS = `youtube://www.youtube.com/${qp}`;
+            deeplinkAndroid = `vnd.youtube://www.youtube.com/${qp}`;
+            break;
+          }
+          case 'channelHandle': {
+            const path = `user/${parsed.id}`;
+            deeplinkIOS = `youtube://www.youtube.com/${path}`;
+            deeplinkAndroid = `vnd.youtube://www.youtube.com/${path}`;
+            break;
+          }
+          case 'channelUser': {
+            const path = `user/${parsed.id}`;
+            deeplinkIOS = `youtube://www.youtube.com/${path}`;
+            deeplinkAndroid = `vnd.youtube://www.youtube.com/${path}`;
+            break;
+          }
+          case 'channelId': {
+            deeplinkIOS = `youtube://www.youtube.com/channel/${parsed.id}`;
+            deeplinkAndroid = `vnd.youtube://www.youtube.com/channel/${parsed.id}`;
+            break;
+          }
+          case 'clip':
+          case 'post':
+          default: {
+            deeplinkIOS = null;
+            deeplinkAndroid = null;
+          }
+        }
+
+        return { deeplinkIOS, deeplinkAndroid, webUrl };
+      }
+
+      function openYouTube() {
+        const ua = navigator.userAgent || navigator.vendor || window.opera;
+        const targetUrl = getYouTubeUrl();
+        const parsed = parseYouTubeUrl(targetUrl);
+        const { deeplinkIOS, deeplinkAndroid, webUrl } = buildDeepLinks(parsed);
+
+        if (!redirectEnabled) {
+          document.getElementById("main-title").textContent = "Redirection désactivée !";
+          document.getElementById("main-desc").innerHTML =
+            `Redirection automatique désactivée sur ce lien.<br>
+             <a id="manual-link" href="${webUrl}" class="link">Cliquer ici pour accéder manuellement.</a>`;
+          document.querySelector(".loader").style.display = "none";
+          return;
+        }
+
+        if (/android/i.test(ua) && deeplinkAndroid) {
+          window.location =
+            `intent://www.youtube.com#Intent;scheme=https;package=com.google.android.youtube;` +
+            `S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
+          setTimeout(() => { window.location = webUrl; }, 3000);
+          return;
+        }
+
+        if (/iPad|iPhone|iPod/.test(ua) && !window.MSStream && deeplinkIOS) {
+          window.location = deeplinkIOS;
+          setTimeout(() => { window.location = webUrl; }, 2000);
+          return;
+        }
+
+        window.location = webUrl;
+      }
+
+      window.onload = function () {
+        const ua = navigator.userAgent || navigator.vendor || window.opera;
+        const targetUrl = getYouTubeUrl();
+        const parsed = parseYouTubeUrl(targetUrl);
+        const { webUrl } = buildDeepLinks(parsed);
+
+        let countdown = 0; 
+        const counterElement = document.getElementById("countdown");
+        const manual = document.getElementById("manual-link");
+        if (manual) manual.href = webUrl;
+
+        if (!redirectEnabled) {
+          document.getElementById("main-title").textContent = "Redirection désactivée !";
+          document.getElementById("main-desc").innerHTML =
+            `Redirection automatique désactivée sur ce lien.<br>
+             <a id="manual-link" href="${webUrl}" class="link">Cliquer ici pour accéder manuellement.</a>`;
+          return;
+        }
+
+        const timer = setInterval(() => {
+          if (countdown > 0) {
+            if (counterElement) counterElement.textContent = countdown;
+            countdown--;
+          } else {
+            clearInterval(timer);
+            openYouTube();
+          }
+        }, 1000);
+      };
+    </script>
+  </head>
+  <body>
+    <div class="loader-container">
+      <div class="logo-circle">
+        <img src="../assets/logoYouTube.png" alt="YouTube Logo" />
+      </div>
+      <h1 id="main-title">
+        Connexion à YouTube dans quelques secondes...
+      </h1>
+      <p id="main-desc">
+        Si rien ne se passe,
+        <a id="manual-link" href="#" class="link">clique ici</a>.
+      </p>
+      <div class="loader"></div>
+    </div>
+  </body>
+</html>
